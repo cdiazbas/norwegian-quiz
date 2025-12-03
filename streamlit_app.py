@@ -13,12 +13,19 @@ st.set_page_config(
 st.markdown("""
 <style>
     .main { padding-top: 0; }
-    /* Streamlit main block container padding for cleaner mobile spacing */
+    /* Maximize usable space: zero container padding and transparent app header */
     .stMainBlockContainer {
-        padding-left: 0.5rem; /* minimal side margin */
-        padding-right: 0.5rem; /* minimal side margin */
-        padding-top: 2rem;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        padding-top: 1rem;
         padding-bottom: 0rem;
+    }
+    .stAppHeader {
+        background-color: rgba(255, 255, 255, 0.0);
+        visibility: visible;
+    }
+    [data-testid="stSidebarHeader"] {
+        height: 2rem; /* keeps just enough space for the icon */
     }
     
     .question-card {
@@ -159,8 +166,8 @@ def get_new_question():
 # Initialize
 init_session_state()
 
-# Header
-st.title("🇳🇴 Norwegian B2 Quiz")
+# Header (smaller title size)
+st.markdown("### 🇳🇴 Norwegian B2 Quiz")
 
 # Top controls: compact metrics + new question button
 colA, colB = st.columns([2, 1])
@@ -236,7 +243,4 @@ else:
 
 # Footer
 st.markdown("---")
-st.markdown(
-    '<p style="text-align: center; color: #6c757d; font-size: 0.9rem;">Practica y aprende noruego a tu ritmo</p>',
-    unsafe_allow_html=True
-)
+# Removed footer tagline for cleaner mobile UI
