@@ -137,6 +137,11 @@ def load_questions():
 
 # Initialize session state
 def init_session_state():
+    # Clear Streamlit cache on first app run this session
+    if 'cache_cleared' not in st.session_state:
+        st.cache_data.clear()
+        st.session_state.cache_cleared = True
+
     if 'questions_df' not in st.session_state:
         st.session_state.questions_df = load_questions()
     if 'current_question' not in st.session_state:
