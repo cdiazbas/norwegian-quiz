@@ -159,6 +159,16 @@ def get_new_question():
         st.session_state.current_question = df.sample(n=1).iloc[0].to_dict()
         st.session_state.selected_answer = None
         st.session_state.evaluated = False
+        # Prepare shuffled options with correctness mapping
+        q = st.session_state.current_question
+        correct_idx = int(q['respuesta_correcta'])
+        opts = [
+            {"text": q['opcion_1'], "is_correct": correct_idx == 1},
+            {"text": q['opcion_2'], "is_correct": correct_idx == 2},
+            {"text": q['opcion_3'], "is_correct": correct_idx == 3},
+        ]
+        random.shuffle(opts)
+        st.session_state.current_options = opts
         st.session_state.total_count += 1
     else:
         st.session_state.current_question = None
@@ -196,7 +206,16 @@ else:
     st.markdown(f'<div class="question-card"><p class="question-text">{q["pregunta"]}</p></div>', unsafe_allow_html=True)
     
     # Options
-    options = [q['opcion_1'], q['opcion_2'], q['opcion_3']]
+    if 'current_options' not in st.session_state or st.session_state.current_options is None:
+        correct_idx = int(q['respuesta_correcta'])
+        opts = [
+            {"text": q['opcion_1'], "is_correct": correct_idx == 1},
+            {"text": q['opcion_2'], "is_correct": correct_idx == 2},
+            {"text": q['opcion_3'], "is_correct": correct_idx == 3},
+        ]
+        random.shuffle(opts)
+        st.session_state.current_options = opts
+    options = [o['text'] for o in st.session_state.current_options]
     
     st.session_state.selected_answer = st.radio(
         "Selecciona tu respuesta:",
@@ -210,18 +229,17 @@ else:
         st.session_state.evaluated = True
         
         # Check which option was selected
-        selected_index = options.index(st.session_state.selected_answer) + 1
-        correct_index = int(q['respuesta_correcta'])
-        
-        if selected_index == correct_index:
+        selected_text = st.session_state.selected_answer
+        chosen = next((o for o in st.session_state.current_options if o['text'] == selected_text), None)
+        if chosen and chosen['is_correct']:
             st.session_state.correct_count += 1
     
     # Show feedback if evaluated
     if st.session_state.evaluated:
-        selected_index = options.index(st.session_state.selected_answer) + 1
-        correct_index = int(q['respuesta_correcta'])
-        
-        if selected_index == correct_index:
+        selected_text = st.session_state.selected_answer
+        chosen = next((o for o in st.session_state.current_options if o['text'] == selected_text), None)
+        correct_option = next((o for o in st.session_state.current_options if o['is_correct']), None)
+        if chosen and chosen['is_correct']:
             st.markdown(f"""
             <div class="success-box">
                 <p>✓ ¡Correcto!</p>
@@ -229,13 +247,21 @@ else:
             </div>
             """, unsafe_allow_html=True)
         else:
-            explanation_key = f'explicacion_{selected_index}'
+            # Determine which explanation corresponds to the selected option
+            # Map selected_text back to original option index
+            explanation_text = ''
+            if selected_text == q['opcion_1']:
+                explanation_text = q['explicacion_1']
+            elif selected_text == q['opcion_2']:
+                explanation_text = q['explicacion_2']
+            else:
+                explanation_text = q['explicacion_3']
             st.markdown(f"""
             <div class="error-box">
                 <p>✗ Incorrecto</p>
-                <p style="margin-top: 0.5rem; font-weight: 400;">{q[explanation_key]}</p>
+                <p style="margin-top: 0.5rem; font-weight: 400;">{explanation_text}</p>
                 <p style="margin-top: 0.8rem; font-weight: 400; border-top: 1px solid #f5c6cb; padding-top: 0.8rem;">
-                    <strong>Respuesta correcta:</strong> {q[f'opcion_{correct_index}']}<br>
+                    <strong>Respuesta correcta:</strong> {correct_option['text'] if correct_option else ''}<br>
                     <em>{q['explicacion_1']}</em>
                 </p>
             </div>
@@ -243,4 +269,9 @@ else:
 
 # Footer
 st.markdown("---")
-# Removed footer tagline for cleaner mobile UI
+# Professional, centered, gray footer with total questions
+total_questions = len(st.session_state.questions_df)
+st.markdown(
+    f'<p style="text-align: center; color: #6B7280; font-size: 0.95rem;">Preguntas en el banco de datos: <strong>{total_questions}</strong></p>',
+    unsafe_allow_html=True
+)
